@@ -1,0 +1,87 @@
+[
+  {
+    "id": "6b19026e-518b-a2eb-9df3-56eaa898866f-sample-1",
+    "name": "Sample Home Dashboard",
+    "dashboard_module": "Home",
+    "metadata": {
+      "components": [
+        {
+          "rows": [
+            [
+              {
+                "view": {
+                  "type": "external-source-list",
+                  "label": "External data source",
+                  "display_columns": [],
+                  "limit": 15
+                }
+              }
+            ],
+            [
+              {
+                "view": {
+                  "label": "Filtered ListView",
+                  "type": "filtered-dashable-list",
+                  "module": "Accounts",
+                  "display_columns": [
+                    "name",
+                    "billing_address_city",
+                    "billing_address_country",
+                    "phone_office",
+                    "assigned_user_name",
+                    "email",
+                    "date_modified",
+                    "date_entered"
+                  ],
+                  "limit": 15
+                },
+                "context": {
+                  "module": "Accounts"
+                }
+              }
+            ],
+            [
+              {
+                "view": {
+                  "type": "statistics",
+                  "label": "My statistics",
+                  "display_columns": [],
+                  "limit": 15
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "3500d6cc-30bd-63ea-79ac-57036b8d7092-sample-2",
+    "name": "Sample Record Dashboard",
+    "dashboard_module": "Accounts",
+    "view_name": "record",
+    "metadata": {
+      "components": [
+        {
+          "rows": [
+            [
+              {
+                "view": {
+                  "type": "recordsummarydashlet"
+                }
+              }
+            ],
+            [
+              {
+                "view": {
+                  "type": "external-source-list",
+                  "label": "External source list"
+                }
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  }
+]

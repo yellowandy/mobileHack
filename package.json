@@ -1,0 +1,18 @@
+{
+  "engines": {
+    "node": "4.4.4",
+    "npm": "3.8.9"
+  },
+  "name": "anotherTest",
+  "version": "0.0.1",
+  "description": "anotherTest starter kit",
+  "main": "index.js",
+  "scripts": {
+    "sdk": "./node index.js"
+  },
+  "dependencies": {
+    "fs-extra": "0.30.0",
+    "lodash": "4.6.1",
+    "strip-json-comments": "2.0.1"
+  }
+}

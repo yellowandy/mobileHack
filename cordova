@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+set -o nounset
+set -o errexit
+set -o pipefail
+
+declare -r DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+declare -r JSON_PARSER="${DIR}/JSON.sh"
+declare -r APP_CONFIG="${DIR}/config/app.json"
+declare -r SDK_PATH="$(cd "${SUGAR_MOBILE_SDK_HOME}" && pwd)"
+declare -r SDK_VERSION="$(cat "${APP_CONFIG}" | "${JSON_PARSER}" | \
+    sed -n 's@\["defaults","jsConfig","sdkVersion"\][^"]*"\([^"]*\)"@\1@gp')"
+declare -r CORDOVA="${SDK_PATH}/${SDK_VERSION}/node_modules/.bin/cordova"
+
+"${CORDOVA}" "$@"

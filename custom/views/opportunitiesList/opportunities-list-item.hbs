@@ -1,0 +1,31 @@
+{{!--
+/*
+ * Your installation or use of this SugarCRM file is subject to the applicable
+ * terms available at
+ * http://support.sugarcrm.com/Resources/Master_Subscription_Agreements/.
+ * If you do not agree to all of the applicable terms or do not have the
+ * authority to bind the entity as an authorized representative, then do not
+ * install or use this SugarCRM file.
+ *
+ * Copyright (C) SugarCRM Inc. All rights reserved.
+ */
+--}}
+<article data-id="{{itemId}}" class="list-item list-item_cell">
+    <div class="list-item-cell__box">
+        <div class="list-item-cell__title">
+            {{fieldByName titleField this template="list"}}
+        </div>
+        {{#if additionalFields}}
+            <div class="fields">
+                {{#each additionalFields}}
+                    <div class="field ellipsis">
+                        {{field ../view model=../model  template="list"}}
+                    </div>
+                {{/each}}
+            </div>
+        {{/if}}
+        <div class="list-item-cell__favorite">
+            {{fieldByName "my_favorite" this}}
+        </div>
+    </div>
+</article>

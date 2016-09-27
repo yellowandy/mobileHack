@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CWD="$(pwd)"
+NODE_SYMLINK="${CWD}/node"
+JSON_PARSER="${DIR}/JSON.sh"
+PACKAGE_JSON="${CWD}/package.json"
+
+if [ ! -x "${JSON_PARSER}" ]; then
+    echo "Required JSON parser '${JSON_PARSER}' doesn't exist or is not executable. Aborting..." >&2
+    exit 1
+fi
+
+if [ ! -r "${PACKAGE_JSON}" ]; then # true if file exists and is readable.
+    echo "Couldn't find '${PACKAGE_JSON}'. Aborting..." >&2
+    exit 1
+fi
+
+REQUIRED_NODE_VERSION="$(cat "${PACKAGE_JSON}" | "${JSON_PARSER}" 2>/dev/null | sed -n 's@\["engines","node"\][^"]*"\([^"]*\)"@\1@gp')"
+
+if [ "${REQUIRED_NODE_VERSION}" == "" ]; then
+    echo "Unable to extract required node version from '${PACKAGE_JSON}' engines.node section. Aborting..." >&2
+    exit 1
+fi
+
+"${DIR}/switch-node" "${PACKAGE_JSON}" "${NODE_SYMLINK}"
+
+if [ "${REQUIRED_NODE_VERSION}" != "$("${NODE_SYMLINK}" -v 2>/dev/null | cut -b 2-)" ]; then
+    echo "Unable to switch node to v${REQUIRED_NODE_VERSION}. Aborting..." >&2
+    exit 1
+fi
+
+CURRENT_NODE_VERSION="${REQUIRED_NODE_VERSION}"
+REQUIRED_NPM_VERSION="$(cat "${PACKAGE_JSON}" | "${JSON_PARSER}" 2>/dev/null | sed -n 's@\["engines","npm"\][^"]*"\([^"]*\)"@\1@gp')"
+
+if [ "${REQUIRED_NPM_VERSION}" == "" ]; then
+    echo "Unable to extract required npm version from '${PACKAGE_JSON}' engines.npm section. Aborting..." >&2
+    exit 1
+fi
+
+NODE_MODULES_DIR="$(pwd)/node_modules"
+LAST_USED_NODE_VERSION_PATH="${NODE_MODULES_DIR}/.node"
+LAST_USED_NPM_VERSION_PATH="${NODE_MODULES_DIR}/.npm"
+
+LAST_USED_NODE_VERSION="$(cat "${LAST_USED_NODE_VERSION_PATH}" 2>/dev/null || echo 'none')"
+LAST_USED_NPM_VERSION="$(cat "${LAST_USED_NPM_VERSION_PATH}" 2>/dev/null || echo 'none')"
+
+if [ "${LAST_USED_NODE_VERSION}" != "${REQUIRED_NODE_VERSION}" ] ||
+   [ "${LAST_USED_NPM_VERSION}" != "${REQUIRED_NPM_VERSION}" ]; then
+    echo "Last used node - ${LAST_USED_NODE_VERSION}, npm - ${LAST_USED_NPM_VERSION} don't match required node - ${REQUIRED_NODE_VERSION}, npm - ${REQUIRED_NPM_VERSION}." >&2
+
+    if [ -a "${NODE_MODULES_DIR}" ]; then
+        read -r -p "Would you like to remove '${NODE_MODULES_DIR}'? [y/n] "
+        if [[ "${REPLY}" =~ ^[Yy] ]]; then
+            rm -rf "${NODE_MODULES_DIR}"
+            mkdir -p "${NODE_MODULES_DIR}"
+        else
+            echo "Node modules '${NODE_MODULES_DIR}' are not removed. I sure hope you know what you are doing. If you encounter some errors then first try to remove manually this folder." >&2
+        fi
+    else
+        mkdir -p "${NODE_MODULES_DIR}"
+    fi
+    
+    echo "${REQUIRED_NODE_VERSION}" > "${LAST_USED_NODE_VERSION_PATH}"
+    echo "${REQUIRED_NPM_VERSION}" > "${LAST_USED_NPM_VERSION_PATH}"
+fi
+
+# we can't use "npm get localNpmPath" because npm may not exist
+localNpmModulePath="$(cat "${CWD}"/.npmrc | grep -v '^\s\{0,\};\s\{0,\}' | sed 's|^[[:space:]]\{1,\}||g' | sed -n 's|^localNpmPath[[:space:]]*=[[:space:]]*"\{0,1\}\([^"]\{1,\}\)"\{0,1\}$|\1|p')"
+if [ "${localNpmModulePath}" == "" ] || [ "${localNpmModulePath}" == "undefined" ]; then
+    echo "Unable to get localNpmPath. Aborting..." >&2
+    exit 1
+fi
+
+NPM_BIN_RELATIVE_PATH="node_modules/.bin/npm"
+
+if [ -a "${localNpmModulePath}" ]; then
+    localNpmModulePath="$(cd "${localNpmModulePath}" && pwd)"
+    LOCAL_NPM_PATH="${localNpmModulePath}/${NPM_BIN_RELATIVE_PATH}"
+    localNpmVersion="$(./node "${LOCAL_NPM_PATH}" -v 2>/dev/null)"
+fi
+
+if [ "${REQUIRED_NPM_VERSION}" != "${localNpmVersion}" ]; then
+    # load needed node, we will use it for installing required npm version
+    if [ "${REQUIRED_NODE_VERSION}" != "$(node -v 2>/dev/null | cut -b 2-)" ]; then
+        NVM_SCRIPT=~/.nvm/nvm.sh
+
+        if [ ! -f "${NVM_SCRIPT}" ]; then
+            echo "Required '${NVM_SCRIPT}' doesn't exist. Aborting..." >&2
+            exit 1
+        fi
+
+        echo "Loading nvm..." >&2
+        . "${NVM_SCRIPT}" >/dev/null 2>&1
+        nvm use "${REQUIRED_NODE_VERSION}" 1>&2
+    fi
+
+    if [ -a "${localNpmModulePath}" ]; then
+        echo "Local npm '${localNpmModulePath}' exists." >&2
+        read -r -p "Remove this directory? [y/n] "
+        if [[ "${REPLY}" =~ ^[Yy] ]]; then
+            rm -rf "${localNpmModulePath}"
+        else
+            echo "Aborted..." >&2
+            exit 1
+        fi
+    fi
+
+    mkdir -p "${localNpmModulePath}"
+    localNpmModulePath="$(cd "${localNpmModulePath}" && pwd)"
+    LOCAL_NPM_PATH="${localNpmModulePath}/${NPM_BIN_RELATIVE_PATH}"
+
+    echo "Installing npm ${REQUIRED_NPM_VERSION} into '${localNpmModulePath}'..." >&2
+
+    # install required version of npm locally
+    cd "${localNpmModulePath}"
+    echo '{"dependencies": {"npm": "'"${REQUIRED_NPM_VERSION}"'"}}' > "${localNpmModulePath}/package.json";
+    npm install --silent --progress=false >/dev/null
+
+    localNpmVersion="$("${NODE_SYMLINK}" "${LOCAL_NPM_PATH}" -v)"
+    if [ "${REQUIRED_NPM_VERSION}" != "${localNpmVersion}" ]; then
+        echo "Unable to install npm ${REQUIRED_NPM_VERSION} locally. Aborting..." >&2
+        exit 1
+    fi
+
+    echo "npm '${LOCAL_NPM_PATH}' ${REQUIRED_NPM_VERSION} install done" >&2
+
+    cd "${CWD}"
+fi
+
+"${NODE_SYMLINK}" "${LOCAL_NPM_PATH}" "$@"

@@ -1,0 +1,83 @@
+// Put your custom styles in this file.
+// Use @SDK_ LESS variables to customize the look-and-feel of your app.
+// See documentation in docs/less for more information. 
+
+.brand {
+  width: 224px;
+  height: 60px;
+}
+
+.view__login {
+  .control-ssl {
+    opacity: 1;
+    .icondefault {
+      color: #0679c8;
+    }
+  }
+  .login__links {
+    .separator {
+      opacity: 1;
+      background: #91969f;
+    }
+    .login-links__link {
+      color: #0679c8;
+    }
+  }
+}
+
+
+//* Custom List */
+.listing_cells {
+  .items {
+    overflow: hidden;
+    background: #f5f5f5;
+  }
+  .list-item_cell {
+    float: left;
+    .box-sizing(border-box);
+    width: 50%;
+    padding: 5px;
+    background: none;
+    border: none;
+    &.current {
+      background: inherit;
+      color: inherit;
+      .list-item-cell__box {
+        border-color: #0679c8;
+      }
+    }
+  }
+}
+
+.list-item-cell__box {
+  min-height: 40px;
+  padding: 5px;
+  border-radius: 6px;
+  background: #fff;
+  border: solid 1px #ccc;
+  font-size: @px12;
+  .list-item-cell__title {
+    .ellipsis();
+    font-weight: bold;
+  }
+  .list-item-cell__favorite {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #f5f5f5;
+    border-radius: 8px;
+  }
+}
+
+@media screen and (min-width: 767px) {
+  .layout__list {
+    .listing_cells {
+      .list-item_cell {
+        width: 25%;
+        .show-content-child & {
+          width: 50%;
+        }
+      }
+    }
+  }
+}

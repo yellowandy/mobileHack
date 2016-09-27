@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+if [ $# -lt 2 ]; then
+    echo "Usage: $0 /path/to/package.json /path/to/where/create/symlink/to/node
+
+This command extracts EXACT version of node from /path/to/package.json engines.node section, then creates/overwrites /path/to/where/create/symlink/to/node symlink to nvm installed node (it installs it using nvm first in case this node version is not installed yet)
+" >&2
+    exit 1
+fi
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+NVM_SCRIPT=~/.nvm/nvm.sh
+JSON_PARSER="${DIR}/JSON.sh"
+
+if [ ! -f "${NVM_SCRIPT}" ]; then
+    echo "Required '${NVM_SCRIPT}' doesn't exist. Aborting..." >&2
+    exit 1
+fi
+
+if [ ! -x "${JSON_PARSER}" ]; then
+    echo "Required JSON parser '${JSON_PARSER}' doesn't exist or is not executable. Aborting..." >&2
+    exit 1
+fi
+
+PACKAGE_JSON="${1}"
+NODE_SYMLINK="${2}"
+
+CURRENT_NODE_VERSION="$("${NODE_SYMLINK}" -v 2>/dev/null | cut -b 2-)"
+if [ "${CURRENT_NODE_VERSION}" == "" ]; then
+    CURRENT_NODE_VERSION="none"
+fi
+
+REQUIRED_NODE_VERSION="$(cat "${PACKAGE_JSON}" | "${JSON_PARSER}" | sed -n 's@\["engines","node"\][^"]*"\([^"]*\)"@\1@gp')"
+
+if [ "${REQUIRED_NODE_VERSION}" != "${CURRENT_NODE_VERSION}" ]; then
+    . "${NVM_SCRIPT}" >/dev/null 2>&1
+
+    requiredNodePath="$(nvm which ${REQUIRED_NODE_VERSION} 2>/dev/null)"
+
+    if [ "${requiredNodePath}" == "" ]; then
+        nvm install "${REQUIRED_NODE_VERSION}"
+        requiredNodePath="$(nvm which ${REQUIRED_NODE_VERSION} 2>/dev/null)"
+
+        if [ "${requiredNodePath}" == "" ]; then
+            echo "Unable to switch node to v${REQUIRED_NODE_VERSION}. Aborting..." >&2
+            exit 1
+        fi
+    fi
+
+    if [ -a "${NODE_SYMLINK}" ]; then
+        read -r -p "Remove current '${NODE_SYMLINK}' to be able to switch \
+node? [y/n] "
+        if [[ "${REPLY}" =~ ^[Yy] ]]; then
+            rm -f "${NODE_SYMLINK}"
+        else
+            echo "Aborted..." >&2
+            exit 1
+        fi
+    fi
+
+    echo "node ${CURRENT_NODE_VERSION} => ${REQUIRED_NODE_VERSION} '${NODE_SYMLINK}'" >&2
+    ln -s "${requiredNodePath}" "${NODE_SYMLINK}"
+fi

@@ -1,0 +1,44 @@
+{
+    "defaults": {
+        "jsConfig": {
+            "appName": "anotherTest",
+            "productName": "anotherTestCRM",
+            "brandName": "anotherTestCRM",
+            "appBuild": "1",
+            "appVersion": "1.0.0",
+            "sdkVersion": "4.1.0.365 alpha17",
+            "about": {
+                "privacy": "http://anothertest.com/mobile_privacy",
+                "tos": "http://anothertest.com/mobile_tos",
+                "support": "support.anothertest.com",
+                "supportEmail": "support@anothertest.com",
+                "copyrightText": "Copyright © 2004-2016 anotherTestCRM Inc. All Rights Reserved.",
+                "trademarkText": "anotherTest and anotherTestCRM are trademarks owned by anotherTestCRM Inc. All other trademarks are the property of their respective owners."
+            },
+            "ui": {
+                "icons": {
+                    "actions": {
+                        "skype": "icon icon-skype",
+                        "magic": "icon icon-magic"
+                    }
+                }
+            }
+        },
+        "native": {
+            "ios": {
+                "binaryName": "anotherTestCRM",
+                "bundleId": "com.anothertest.crm"
+            },
+            "android": {
+                "signingKey": {
+                    "keystore": "",
+                    "alias": ""
+                },
+                "binaryName": "anotherTestCRM",
+                "packageName": "com.anothertest.crm"
+            },
+            "statusBarBackgroundColor": "#bf2020",
+            "splashscreenBackgroundColor": "#7f8384"
+        }
+    }
+}

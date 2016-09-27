@@ -1,0 +1,62 @@
+{
+    "modules": {
+        "Bookmarks": {
+            "_hash": "BookmarksHash",
+            "fields": {
+                "_hash": "BookmarkFieldsHash",
+                "id": {
+                    "name": "id",
+                    "type": "id"
+                },
+                "name": {
+                    "name": "name",
+                    "type": "name"
+                },
+                "url": {
+                    "name": "url",
+                    "type": "varchar",
+                    "len": 100
+                }
+            },
+            "views": {
+                "list": {
+                    "meta": {
+                        "type": "cool-bookmarks-list",
+                        "panels": [
+                            {
+                                "label": "Bookmarks",
+                                "fields": [
+                                    {
+                                        "name": "name",
+                                        "label": "Name"
+                                    },
+                                    {
+                                        "name": "url",
+                                        "label": "Link"
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            },
+            "layouts": {
+                "list": {
+                    "meta": {
+                        "type": "list",
+                        "components": [
+                            {"view": "list"}
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "modules_info": {
+        "Bookmarks": {
+            "visible": true,
+            "enabled": true,
+            "display_tab": true
+        }
+    }
+}
