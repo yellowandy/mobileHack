@@ -78,7 +78,6 @@ var PtrCustomView = customization.declareView({
      *
      */
     stopSiri: function() {
-
         console.log("Stopping siri.....");
 
         //CleanUp The UI
@@ -92,7 +91,7 @@ var PtrCustomView = customization.declareView({
             messages: ['Processing....'],
             closeable: true,
             autoClose: true,
-            level: 'info',
+            level: 'info'
         });
 
         this.stopRecording();
@@ -173,7 +172,6 @@ var PtrCustomView = customization.declareView({
     },
 
     parseResponse: function(response) {
-        debugger
         var msgId = response.msg_id;
         var text = response._text;
         var entities = response.entities;
@@ -181,6 +179,8 @@ var PtrCustomView = customization.declareView({
         var moduleName = entities && entities.module && entities.module[0].value;
         var value = entities && entities.noun && entities.noun[0].value;
 
+        console.log('response: ', response);
+        console.log('text: ', text);
         console.log('intent: ', intent);
         console.log('moduleName: ', moduleName);
         console.log('value: ', value);
@@ -200,6 +200,13 @@ var PtrCustomView = customization.declareView({
                     this._processCall(intent, moduleName, value);
                     break;
             }
+        } else {
+            app.alert.show('mobilehack_error_recording', {
+                messages: ['ERROR - Text was parsed as: Action: ' + intent + ' | Module: ' + moduleName + ' | Value: ' + value],
+                closeable: true,
+                autoClose: true,
+                level: 'error'
+            });
         }
     },
 
@@ -240,10 +247,8 @@ var PtrCustomView = customization.declareView({
 
     _processFind: function(intent, moduleName, value) {
         var beanModuleName = this._moduleMap[moduleName];
-        var bean = app.data.createBean(beanModuleName, {
-            name: value
-        });
 
+        debugger;
         app.alert.show('mobilehack_fetch_start', {
             messages: ['Getting ' + beanModuleName + ' record: ' + value],
             closeable: true,
@@ -251,7 +256,19 @@ var PtrCustomView = customization.declareView({
             level: 'success'
         });
 
-
+        app.api.records('read', beanModuleName, {
+            filters: [
+                {
+                    name: {
+                        $starts: value
+                    }
+                }
+            ]
+        }, {
+            skipOfflineRead: false
+        }, {
+            success: _.bind(this._onFetchSuccess, this)
+        });
         /*
 
          Can't find a record just by the name, possibly look into searching by name and
@@ -263,17 +280,30 @@ var PtrCustomView = customization.declareView({
          */
     },
 
-    _onFetchSuccess: function(record) {
+    _onFetchSuccess: function(data) {
+        var record;
         app.alert.dismiss('mobilehack_fetch_start');
+        if (data.records.length) {
+            record = data.records[0];
+            if (data.records.length === 1) {
+                app.alert.show('mobilehack_fetch_success', {
+                    messages: ['Success! Found ' + record._module + ' record: ' + record.name],
+                    closeable: true,
+                    autoClose: true,
+                    level: 'success'
+                });
+            } else {
+                app.alert.show('mobilehack_fetch_success2', {
+                    messages: ['Success! Found ' + data.records.length + ' records matching --' +
+                        ' figure out how to handle that!!!!!'],
+                    closeable: true,
+                    autoClose: true,
+                    level: 'success'
+                });
+            }
 
-        app.alert.show('mobilehack_fetch_success', {
-            messages: ['Found ' + beanModuleName + ' record: ' + value],
-            closeable: true,
-            autoClose: true,
-            level: 'success'
-        });
-
-        debugger;
+            app.controller.navigate('#' + record._module + '/' + record.id)
+        }
     },
 
     _processGetDirections: function(intent, moduleName, value) {
