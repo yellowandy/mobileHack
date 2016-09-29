@@ -42,7 +42,9 @@ var PtrCustomView = customization.declareView({
     stopSiri: function() {
 
         console.log("Stopping siri.....");
-        $("#startFauxSiri").show();
+
+        //CleanUp The UI
+        $("#startFauxSiri").hide();
         $("#stopFauxSiri").hide();
 
         app.alert.dismiss('siri_listening');
@@ -52,6 +54,68 @@ var PtrCustomView = customization.declareView({
             closeable: true,
             autoClose: true,
             level: 'info',
+        });
+
+        //Make the request to wit and then create a new account.
+        var that = this;
+        this.sendRequestToWit(null,function(witResponse){
+
+            var accountName = witResponse.entities.noun[0].value;
+            that.createAccount(accountName);
+        })
+
+    },
+
+  /**
+   * Send a request to the wit api
+   *
+   * @param err
+   * @param callback
+   */
+    sendRequestToWit: function(err, callback) {
+
+        $.ajax({
+            url: 'https://api.wit.ai/message?v=20160928&q=create%20account%20salesforce',
+            headers: {
+                Authorization: 'Bearer X46FYEZ5LOGGH73ZLDC7EV3IYJEGPSY7'
+            },
+            success: function(resp) {
+
+                callback(resp);
+            },
+            error: function() {
+                err();
+            },
+        });
+    },
+
+  /**
+   *  Create an account and navigate to the detail view when done.
+   * @param accountName
+   */
+  createAccount: function(accountName){
+
+        var postModel = app.data.createBean('Accounts');
+
+        postModel.set({
+            name: accountName
+        });
+
+        postModel.save(null, {
+            fields: ['name'],
+
+            params: {
+                skipOfflineRead: true,
+            },
+            success: function(model) {
+                // Do any additional setup after checkin activity is saved
+                app.controller.navigate('Accounts/'+model.get('id'));
+            },
+
+            error: function(err) {
+                alert('bad');
+                // Add error handling.
+            },
         });
 
     },
@@ -64,12 +128,14 @@ var PtrCustomView = customization.declareView({
 
         $("#startFauxSiri").hide();
         $("#stopFauxSiri").show();
+        $("#spinnerVoice").show();
+
 
         app.alert.show('siri_listening', {
             messages: ['Listening....'],
             closeable: true,
             autoClose: false,
-            level: 'success',
+            level: 'load',
         });
 
         /*
