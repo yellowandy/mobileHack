@@ -1,0 +1,6 @@
+/config/app-dev.json
+/build/
+/node
+/node_modules/
+.DS_Store
+/native/

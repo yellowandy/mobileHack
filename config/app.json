@@ -5,6 +5,7 @@
             "productName": "anotherTestCRM",
             "brandName": "anotherTestCRM",
             "appBuild": "1",
+	    "keyValueStoreEncryptionEnabled": false,
             "appVersion": "1.0.0",
             "sdkVersion": "4.1.0.365 alpha17",
             "about": {

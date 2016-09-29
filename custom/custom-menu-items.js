@@ -59,7 +59,7 @@ var customMenuItems = [
         rank: 2,
     },
     {
-        label: 'Pull down to refresh',
+        label: 'Faux Siri',
         route: 'ptr-custom',  // "#ptr-custom" route is opened when menu item is clicked.
         rank: 3,
     },

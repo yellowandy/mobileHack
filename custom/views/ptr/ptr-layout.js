@@ -30,6 +30,56 @@ var PtrCustomView = customization.declareView({
         });
     },
 
+    events: {
+        "click #startFauxSiri": 'startSiriListening',
+        "click #stopFauxSiri": 'stopSiri',
+
+    },
+
+    /**
+     *
+     */
+    stopSiri: function() {
+
+        console.log("Stopping siri.....");
+        $("#startFauxSiri").show();
+        $("#stopFauxSiri").hide();
+
+        app.alert.dismiss('siri_listening');
+
+        app.alert.show('siri_processing', {
+            messages: ['Processing....'],
+            closeable: true,
+            autoClose: true,
+            level: 'info',
+        });
+
+    },
+
+    /**
+     *
+     *
+     */
+    startSiriListening: function() {
+
+        $("#startFauxSiri").hide();
+        $("#stopFauxSiri").show();
+
+        app.alert.show('siri_listening', {
+            messages: ['Listening....'],
+            closeable: true,
+            autoClose: false,
+            level: 'success',
+        });
+
+        /*
+        audioinput.start({
+            // Here we've changed the bufferSize from the default to 8192 bytes.
+            bufferSize: 8192
+        });
+        */
+
+    },
     ptrRefresh: function() {
         dialog.showAlert('event has been triggered');
 
@@ -46,7 +96,7 @@ var PtrLayout = customization.declareLayout({
     views: [PtrCustomView],
     header: {
         enabled: true,
-        title: app.lang.get('PTR sample'),
+        title: app.lang.get('Faux Siri'),
         buttons: {
             mainMenu: true,
         },

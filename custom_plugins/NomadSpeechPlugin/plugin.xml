@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+           id="nomad-plugin-speech"
+      version="1.0.0">
+
+    <name>NomadSpeechPlugin</name>
+    <description>Nomad Speech Plugin</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,nomad,speech</keywords>
+
+    <js-module src="www/nomadspeech.js" name="NomadSpeechPlugin">
+        <runs/>
+    </js-module>
+
+    <!-- ios -->
+    <platform name="ios">
+
+        <config-file target="config.xml" parent="/*">
+                <feature name="NomadSpeechPlugin">
+                    <param name="ios-package" value="NomadSpeechPlugin"/>
+                    <param name="onload" value="true"/>
+                </feature>
+        </config-file>
+        <header-file src="src/ios/NomadSpeechPlugin.h" />
+        <source-file src="src/ios/NomadSpeechPlugin.m" />
+        <resource-file src="src/ios/SpeechPluginResources.bundle" />
+
+    </platform>
+
+</plugin>
