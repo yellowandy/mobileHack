@@ -211,10 +211,7 @@ var PtrCustomView = customization.declareView({
         }
     },
 
-
-
     _processCreate: function(intent, moduleName, value) {
-        debugger;
         var beanModuleName = this._moduleMap[moduleName];
         var bean = app.data.createBean(beanModuleName, {
             name: value,
@@ -363,7 +360,65 @@ var PtrCustomView = customization.declareView({
     },
 
     _processCall: function(intent, moduleName, value) {
+        var beanModuleName = this._moduleMap[moduleName];
 
+        app.alert.show('mobilehack_call_start', {
+            messages: ['Getting phone numbers for ' + beanModuleName + ' - ' + value],
+            closeable: true,
+            autoClose: true,
+            level: 'success'
+        });
+
+        app.api.records('read', beanModuleName, {
+            filters: [
+                {
+                    name: {
+                        $starts: value
+                    }
+                }
+            ]
+        }, {
+            skipOfflineRead: false
+        }, {
+            success: _.bind(this._onProcessCallSuccess, this)
+        });
+    },
+
+    _onProcessCallSuccess: function(data) {
+        var record;
+        var phoneNums;
+        var phoneModel;
+        app.alert.dismiss('mobilehack_call_start');
+        if (data.records.length) {
+            record = data.records[0];
+            if (data.records.length === 1) {
+                app.alert.show('mobilehack_call_success1', {
+                    messages: ['Success! Found ' + record._module + ' record: ' + record.name],
+                    closeable: true,
+                    autoClose: true,
+                    level: 'success'
+                });
+                phoneNums = [{
+                    'Office': record.phone_office
+                }];
+
+                phoneModel = app.data.createBean(record._module, record);
+
+                deviceFeatures.callPhone(phoneNums, {
+                    model: phoneModel
+                });
+            } else {
+                app.alert.show('mobilehack_call_success2', {
+                    messages: ['Success! Found ' + data.records.length + ' records matching --' +
+                    ' figure out how to handle that!!!!!'],
+                    closeable: true,
+                    autoClose: true,
+                    level: 'success'
+                });
+            }
+
+            app.controller.navigate('#' + record._module + '/' + record.id)
+        }
     },
 });
 
