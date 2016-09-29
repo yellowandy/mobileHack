@@ -22,7 +22,10 @@ var PtrCustomView = customization.declareView({
 
     audioContext: undefined,
     recorder: undefined,
-
+    _moduleMap: {
+        account: 'Accounts',
+        contact: 'Contacts'
+    },
     initialize: function(options) {
         this._super(options);
 
@@ -93,16 +96,6 @@ var PtrCustomView = customization.declareView({
         });
 
         this.stopRecording();
-
-        //Make the request to wit and then create a new account.
-
-  /*      var that = this;
-        this.sendRequestToWit(null,function(witResponse){
-
-            var accountName = witResponse.entities.noun[0].value;
-            that.createAccount(accountName);
-        })
-*/
     },
 
   /**
@@ -111,15 +104,15 @@ var PtrCustomView = customization.declareView({
    * @param err
    * @param callback
    */
-    sendRequestToWit: function(err, callback, mp3Data) {
+    sendRequestToWit: function(err, callback, data) {
         $.ajax({
             url: 'https://api.wit.ai/speech?v=20160928',
             type: 'POST',
             processData: false,
-            data: mp3Data,
+            data: data,
             headers: {
                 Authorization: 'Bearer X46FYEZ5LOGGH73ZLDC7EV3IYJEGPSY7',
-                'Content-type': 'audio/mpeg3'
+                'Content-type': 'audio/wav'
             },
             success: function(resp) {
                 console.log('resp: ', resp);
@@ -127,39 +120,8 @@ var PtrCustomView = customization.declareView({
             },
             error: function() {
                 err();
-            },
+            }
         });
-    },
-
-  /**
-   *  Create an account and navigate to the detail view when done.
-   * @param accountName
-   */
-  createAccount: function(accountName){
-
-        var postModel = app.data.createBean('Accounts');
-
-        postModel.set({
-            name: accountName
-        });
-
-        postModel.save(null, {
-            fields: ['name'],
-
-            params: {
-                skipOfflineRead: true,
-            },
-            success: function(model) {
-                // Do any additional setup after checkin activity is saved
-                app.controller.navigate('Accounts/'+model.get('id'));
-            },
-
-            error: function(err) {
-                alert('bad');
-                // Add error handling.
-            },
-        });
-
     },
 
     startRecording: function(stream) {
@@ -175,19 +137,29 @@ var PtrCustomView = customization.declareView({
     stopRecording: function() {
         this.recorder.stop();
 
-        this.recorder.getBuffer(_.bind(this.getBufferCb, this));
+        this.recorder.exportWAV(_.bind(function(blob) {
+            var url = URL.createObjectURL(blob);
+            var li = document.createElement('li');
+            var au = document.createElement('audio');
+            var hf = document.createElement('a');
+
+            au.controls = true;
+            au.src = url;
+            hf.href = url;
+            hf.download = new Date().toISOString() + '.wav';
+            hf.innerHTML = hf.download;
+            li.appendChild(au);
+            li.appendChild(hf);
+            this.$('#recordingslist').append(li);
+
+            console.log('currentMp3Blob: ', blob);
+
+            this.sendRequestToWit(null, _.bind(this.parseResponse, this), blob);
+        }, this));
+        //this.recorder.getBuffer(_.bind(this.getBufferCb, this));
 
         this.recorder.clear();
     },
-
-    getBufferCb: function(buffer) {
-        var currentMp3Blob = new Blob([new Uint8Array(buffer[0]) ], {type: 'audio/mp3'});
-
-        console.log('currentMp3Blob: ', currentMp3Blob);
-
-        this.sendRequestToWit(null, _.bind(this.parseResponse, this), currentMp3Blob);
-    },
-
 
     ptrRefresh: function() {
         dialog.showAlert('event has been triggered');
@@ -231,9 +203,11 @@ var PtrCustomView = customization.declareView({
         }
     },
 
+
+
     _processCreate: function(intent, moduleName, value) {
         debugger;
-        var beanModuleName = _moduleMap[moduleName];
+        var beanModuleName = this._moduleMap[moduleName];
         var bean = app.data.createBean(beanModuleName, {
             name: value,
             assigned_user_id: app.user.get('id'),
@@ -263,6 +237,52 @@ var PtrCustomView = customization.declareView({
         });
         app.controller.navigate('#' + record._module + '/' + record.id)
     },
+
+    _processFind: function(intent, moduleName, value) {
+        var beanModuleName = this._moduleMap[moduleName];
+        var bean = app.data.createBean(beanModuleName, {
+            name: value
+        });
+
+        app.alert.show('mobilehack_fetch_start', {
+            messages: ['Getting ' + beanModuleName + ' record: ' + value],
+            closeable: true,
+            autoClose: true,
+            level: 'success'
+        });
+
+
+        /*
+
+         Can't find a record just by the name, possibly look into searching by name and
+         returning a list of records that are like the name?
+
+         app.api.records('read', beanModuleName, bean.toJSON(), null, {
+         success: _.bind(this._onFetchSuccess, this)
+         });
+         */
+    },
+
+    _onFetchSuccess: function(record) {
+        app.alert.dismiss('mobilehack_fetch_start');
+
+        app.alert.show('mobilehack_fetch_success', {
+            messages: ['Found ' + beanModuleName + ' record: ' + value],
+            closeable: true,
+            autoClose: true,
+            level: 'success'
+        });
+
+        debugger;
+    },
+
+    _processGetDirections: function(intent, moduleName, value) {
+
+    },
+
+    _processCall: function(intent, moduleName, value) {
+
+    },
 });
 
 var PtrLayout = customization.declareLayout({
@@ -287,10 +307,7 @@ var mobileHackUtils = _.bind(function() {
         'call'
     ];
 
-    var _moduleMap = {
-        account: 'Accounts',
-        contact: 'Contacts'
-    };
+
 
     var testResponse = {
         "msg_id" : "c41c3ba1-7979-4ae5-9a28-15739090c067",
@@ -355,7 +372,7 @@ var mobileHackUtils = _.bind(function() {
         },
 
         _processCreate: function(intent, moduleName, value) {
-            var beanModuleName = _moduleMap[moduleName];
+            var beanModuleName = this._moduleMap[moduleName];
             var bean = app.data.createBean(beanModuleName, {
                 name: value,
                 assigned_user_id: app.user.get('id'),
@@ -386,51 +403,7 @@ var mobileHackUtils = _.bind(function() {
             app.controller.navigate('#' + record._module + '/' + record.id)
         },
 
-        _processFind: function(intent, moduleName, value) {
-            var beanModuleName = _moduleMap[moduleName];
-            var bean = app.data.createBean(beanModuleName, {
-                name: value
-            });
 
-            app.alert.show('mobilehack_fetch_start', {
-                messages: ['Getting ' + beanModuleName + ' record: ' + value],
-                closeable: true,
-                autoClose: true,
-                level: 'success'
-            });
-
-
-            /*
-
-            Can't find a record just by the name, possibly look into searching by name and
-            returning a list of records that are like the name?
-
-            app.api.records('read', beanModuleName, bean.toJSON(), null, {
-                success: _.bind(this._onFetchSuccess, this)
-            });
-            */
-        },
-
-        _onFetchSuccess: function(record) {
-            app.alert.dismiss('mobilehack_fetch_start');
-
-            app.alert.show('mobilehack_fetch_success', {
-                messages: ['Found ' + beanModuleName + ' record: ' + value],
-                closeable: true,
-                autoClose: true,
-                level: 'success'
-            });
-
-            debugger;
-        },
-
-        _processGetDirections: function(intent, moduleName, value) {
-
-        },
-
-        _processCall: function(intent, moduleName, value) {
-
-        },
 
         _DEV_parseResponseTest: function(response) {
             response = response || testResponse;
