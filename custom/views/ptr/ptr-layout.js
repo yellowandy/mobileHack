@@ -13,6 +13,7 @@ var app = SUGAR.App;
 var customization = require('%app.core%/customization');
 var ptr = require('%app.views%/ptr');
 var dialog = require('%app.core%/dialog');
+var deviceFeatures = require('%app.core%/device');
 
 var PtrCustomView = customization.declareView({
     register: { type: 'PtrExample' },
@@ -193,7 +194,7 @@ var PtrCustomView = customization.declareView({
                 case 'find':
                     this._processFind(intent, moduleName, value);
                     break;
-                case 'get directions':
+                case 'directions to':
                     this._processGetDirections(intent, moduleName, value);
                     break;
                 case 'call':
@@ -297,7 +298,68 @@ var PtrCustomView = customization.declareView({
     },
 
     _processGetDirections: function(intent, moduleName, value) {
+        var beanModuleName = this._moduleMap[moduleName];
 
+        app.alert.show('mobilehack_dir_start', {
+            messages: ['Getting directions to ' + beanModuleName + ' - ' + value],
+            closeable: true,
+            autoClose: true,
+            level: 'success'
+        });
+
+        app.api.records('read', beanModuleName, {
+            filters: [
+                {
+                    name: {
+                        $starts: value
+                    }
+                }
+            ]
+        }, {
+            skipOfflineRead: false
+        }, {
+            success: _.bind(this._onGetDirectionsSuccess, this)
+        });
+    },
+
+    _onGetDirectionsSuccess: function(data) {
+        var record;
+        var address;
+        app.alert.dismiss('mobilehack_dir_start');
+        if (data.records.length) {
+            record = data.records[0];
+            if (data.records.length === 1) {
+                app.alert.show('mobilehack_dir_success1', {
+                    messages: ['Success! Found ' + record._module + ' record: ' + record.name],
+                    closeable: true,
+                    autoClose: true,
+                    level: 'success'
+                });
+                address = [{
+                    'Billing Address': {
+                        'street': record.billing_address_street,
+                        'city': record.billing_address_city,
+                        'state': record.billing_address_state,
+                        'postalcode': record.billing_address_postalcode
+                    }
+                }];
+
+                deviceFeatures.openAddress({
+                    showDirections: true,
+                    addresses: address
+                });
+            } else {
+                app.alert.show('mobilehack_dir_success2', {
+                    messages: ['Success! Found ' + data.records.length + ' records matching --' +
+                    ' figure out how to handle that!!!!!'],
+                    closeable: true,
+                    autoClose: true,
+                    level: 'success'
+                });
+            }
+
+            app.controller.navigate('#' + record._module + '/' + record.id)
+        }
     },
 
     _processCall: function(intent, moduleName, value) {
