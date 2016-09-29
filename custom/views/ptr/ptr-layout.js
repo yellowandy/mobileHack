@@ -248,7 +248,6 @@ var PtrCustomView = customization.declareView({
     _processFind: function(intent, moduleName, value) {
         var beanModuleName = this._moduleMap[moduleName];
 
-        debugger;
         app.alert.show('mobilehack_fetch_start', {
             messages: ['Getting ' + beanModuleName + ' record: ' + value],
             closeable: true,
@@ -269,15 +268,6 @@ var PtrCustomView = customization.declareView({
         }, {
             success: _.bind(this._onFetchSuccess, this)
         });
-        /*
-
-         Can't find a record just by the name, possibly look into searching by name and
-         returning a list of records that are like the name?
-
-         app.api.records('read', beanModuleName, bean.toJSON(), null, {
-         success: _.bind(this._onFetchSuccess, this)
-         });
-         */
     },
 
     _onFetchSuccess: function(data) {
